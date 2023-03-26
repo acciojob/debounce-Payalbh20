@@ -1,23 +1,33 @@
 function debounce(callback, delay, immediate = false) {
-  let timeoutId;
-
-  return function debounced(...args) {
-    const context = this;
-
-    function delayedCallback() {
-      if (!immediate) {
-        callback.apply(context, args);
+    let timeoutId;
+    let lastArgs;
+    let lastThis;
+    let result;
+  
+    const executeCallback = () => {
+      result = callback.apply(lastThis, lastArgs);
+      lastArgs = null;
+      lastThis = null;
+    };
+  
+    const debounced = function (...args) {
+      lastArgs = args;
+      lastThis = this;
+      if (immediate && !timeoutId) {
+        executeCallback();
       }
-      timeoutId = null;
-    }
-
-    const shouldCallImmediately = immediate && timeoutId === undefined;
-
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(delayedCallback, delay);
-
-    if (shouldCallImmediately) {
-      callback.apply(context, args);
-    }
-  };
-}
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(executeCallback, delay);
+      return result;
+    };
+  
+    debounced.cancel = () => {
+      clearTimeout(timeoutId);
+      lastArgs = null;
+      lastThis = null;
+    };
+  
+    return debounced;
+  }
+  
+  module.exports = debounce;
